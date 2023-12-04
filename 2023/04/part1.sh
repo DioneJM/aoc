@@ -2,7 +2,6 @@
 
 function parse_card() {
     card=$@
-    echo "blah: ${card[@]}" >&2
     card_number=$(echo $card | cut -f1 -d ':' | cut -f2 -d ' ')
     winning_numbers=($(echo $card | cut -f2 -d ':' | cut -f1 -d '|'))
     winning_numbers_str=$(echo $card | cut -f2 -d ':' | cut -f1 -d '|')
@@ -14,10 +13,8 @@ function parse_card() {
 
     matches=0
     for number in ${my_numbers[@]}; do
-        echo "number: $number" >&2
         for winning_number in ${winning_numbers[@]}; do
             if [[ $winning_number -eq $number ]]; then
-                echo "$number is in $winning_numbers_str" >&2
                 matches=$(( $matches+1 ))
             fi
         done
@@ -26,14 +23,7 @@ function parse_card() {
     if [[ $matches -eq 0 ]]; then
         echo "0"
     else
-        score=1
-        count=0
-        for (( i = 0; i < $matches - 1; i++)); do
-            score=$(( $score * 2 ))
-            count=$(( count+1 ))
-        done
-        echo "total count = $count" >&2
-        echo $score
+        echo $(( 2**$(( $matches-1 )) ))
     fi
 }
 
