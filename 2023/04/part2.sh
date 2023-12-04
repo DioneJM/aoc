@@ -42,12 +42,9 @@ do
     num_matches=$(parse_card $line)
     echo "for card $card_number, got num matches: $num_matches" >&2
     for ((i=0; i < $num_matches; i++)); do
-        record_idx=$(( $card_number + i ))
-        echo "adding copy for card number: $record_idx"
-        current_count=${matches_record[$record_idx]}
-        echo "current count: $current_count" >&2
-        matches_record[$record_idx]=$(( $current_count + $current_card_count ))
-        echo "after: ${matches_record[@]}" >&2
+        copy_card_idx=$(( $card_number + i ))
+        copy_card_count=${matches_record[$copy_card_idx]}
+        matches_record[$copy_card_idx]=$(( $copy_card_count + $current_card_count ))
     done
     echo "---" >&2
 done
