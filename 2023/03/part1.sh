@@ -21,7 +21,7 @@
 # IF no then nothing to add
 
 #special_char_regex="[$&+,:;=?@#|\'<>^*()%!-]|[0-9]"
-special_char_regex="[^.]"
+special_char_regex="[^.0-9]"
 schematic=()
 schematic_width=0
 while IFS="" read line
@@ -31,18 +31,32 @@ do
     echo $line
 done
 echo '---'
-echo "schematic width: $schematic_width"
-echo '---'
 #echo "schematic: ${schematic[@]}"
 
 function get_number_position() {
     search_string=$1
     row=$2
-    #echo "searching for $search_string" >&2
-    #echo "in row $row" >&2
+    echo "searching for $search_string" >&2
+    echo "in row $row" >&2
+
+    first_character=${search_string[0]}
+    search_length=${#search_string}
+    echo "length: $search_length" >&2
+
+    # Convert string to array of characters
+    array=()
+    for ((i = 0; i < ${#row}; i++)); do
+        array+=("${row:$i:1}")
+    done
+
+    for i in ${array[@]}; do
+        echo "ele $i" >&2
+    done
+    # Restore IFS to its original value
 
     rest=${row#*$search_string}
     position=$(( ${#row} - ${#rest} - ${#search_string} ))
+    echo "position of $search_string: $position" >&2
     echo $position
 }
 
@@ -71,6 +85,7 @@ function num_has_symbol_adjacent_in_row() {
 
     return 1
 }
+
 function num_has_symbol_adjacent_in_previous_row() {
     start_position=$1
     end_position=$2
@@ -115,7 +130,7 @@ function num_has_symbol_adjacent_in_next_row() {
     start_substring=$(( $start_index > 0 ? $start_index : 0 ))
     end_substring=$(( $end_position - $start_substring + 2))
     substring=${next_row:$start_substring:$end_substring}
-    #echo "next row substring: $start_substring $end_substring $substring" >&2
+    echo "next row substring: $start_substring $end_substring $substring" >&2
     if [[ $substring =~ $special_char_regex ]]; then
         return 0
     fi
@@ -123,18 +138,47 @@ function num_has_symbol_adjacent_in_next_row() {
     return 1
 }
 
+function get_all_number_position_in_row() {
+    $row=$0
+
+
+    index_aray=($(echo $row | awk '{s=$0;  i=1; idx=0;
+                while (i>0){
+                    i=match(s, /[0-9]+/);
+                    if(i>0) {
+                        idx += i;
+                        print idx-1;
+                        s=substr(s, i+1);
+                    }
+                }
+            }'))
+
+    echo "searching in $row" >&2
+    echo "index_array: ${index_aray[@]}" >&2 
+    echo $index_array
+}
+
 
 
 current_row=0
 running_total=0
 for row in ${schematic[@]}; do
-    echo "evaluating: $row" >&2
+    if [[ $current_row -gt 0 ]]; then
+        echo "${schematic[$(( $current_row - 1 ))]} (previous_row)" >&2
+    fi
+    echo "$row (evaluating)" >&2
+    if [[ $current_row -lt $(( ${#schematic} - 1 )) ]]; then
+        echo "${schematic[$(( $current_row + 1 ))]} (next_row)" >&2
+    else
+        echo "next_row: [ ]"
+    fi
     numbers_in_row=($(echo $row | grep -o "[0-9]*"))
+    number_positions_in_row=$(get_all_number_position_in_row $row) # array of indices for each digit in a row
 
     for number in ${numbers_in_row[@]}; do
-        echo "checking: $number" >&2
         start_position=$(get_number_position $number $row)
         end_position=$(($start_position + ${#number} -1))
+        echo "checking: $number. start: $start_position, end: $end_position" >&2
         # this function call is possible because it returns a 0 or non-zero value
         if num_has_symbol_adjacent_in_row $start_position $end_position $row; then
             echo "adding -$number- to total (SAME row case)" >&2
